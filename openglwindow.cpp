@@ -113,9 +113,7 @@ void OpenGLWindow::initializeGL() {
   usuario.setFase(1);
   usuario.setWin(0);
   
-  m_bullets.fase_atual=usuario.getFase();
-  m_asteroids.fase_atual=usuario.getFase();
-  m_ship.fase_atual=usuario.getFase();
+  refreshFase(usuario.getFase());
   velocidade=0;
 
 // Inicio do jogo
@@ -227,27 +225,40 @@ void OpenGLWindow::paintUI(){
     
     ImGuiWindowFlags flags{
                            ImGuiWindowFlags_NoFocusOnAppearing |
-                           ImGuiWindowFlags_NoBringToFrontOnFocus
+                           ImGuiWindowFlags_NoBringToFrontOnFocus 
                            };
 
     ImGui::Begin(" Menu ",nullptr, flags);
-    ImGui::Columns(3, NULL, true);
+    
 
     if(m_gameData.m_state == State::Menu){
+      ImGui::Columns(2, NULL, true);
          if (ImGui::Button("Novo Jogo", ImVec2(100, 80))){
         m_gameData.m_state = State::Playing;
         restarting = false;
         restart();
       }
     } else if (m_gameData.m_state == State::Pause) {
+      ImGui::Columns(3, NULL, true);
         if (ImGui::Button("Continuar", ImVec2(100, 80)))
           m_gameData.m_state = State::Playing; 
-    }
-   
-      ImGui::NextColumn();
-      if (ImGui::Button("Option", ImVec2(100, 80))){
-        ImGui::ShowDemoWindow();
+        
+         ImGui::NextColumn();
+      if (ImGui::Button("Reiniciar", ImVec2(100, 80))){
+        m_gameData.m_state = State::Playing;
+        restarting = true;
+         usuario.setFase(1);
+         usuario.setVida(usuario.getMaxVida());
+         refreshFase(usuario.getFase());
+         fator_screencolor=0;
+         glClearColor(0,0,0,0.5); 
+
+         restart();
+
       }
+
+    }
+     
       ImGui::NextColumn();
       if (ImGui::Button("Sair", ImVec2(100, 80))){
         exit(1);
@@ -330,9 +341,7 @@ void OpenGLWindow::checkCollisions() {
       else {
         usuario.setVida(usuario.getMaxVida());
         usuario.setFase(1);
-        m_bullets.fase_atual=usuario.getFase();
-        m_asteroids.fase_atual=usuario.getFase();
-        m_ship.fase_atual=usuario.getFase();
+        refreshFase(usuario.getFase());
         glClearColor(0,0,0,0.5);
         fator_screencolor=0;
       }
@@ -400,11 +409,16 @@ void OpenGLWindow::checkWinCondition() {
       glClearColor(0, 0, 0, 0.5);
       fator_screencolor=0;
     }
-    m_bullets.fase_atual=usuario.getFase();
-    m_asteroids.fase_atual=usuario.getFase();
-    m_ship.fase_atual=usuario.getFase();
+
+    refreshFase(usuario.getFase());
 
     m_restartWaitTimer.restart();
     restarting=true;
   }
+}
+
+void OpenGLWindow::refreshFase(int fase_atual){
+      m_bullets.fase_atual=fase_atual;
+    m_asteroids.fase_atual=fase_atual;
+    m_ship.fase_atual=fase_atual;
 }

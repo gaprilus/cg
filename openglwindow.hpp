@@ -55,6 +55,7 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   void restart();
   void update();
 
+  void refreshFase(int fase_atual);
   int fase_atual;
 
   public:
