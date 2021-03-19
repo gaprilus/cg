@@ -12,6 +12,7 @@ class user{
     int win;
     int max_vida;
     int max_fase;
+   
   public:
   user();
   void setVida(int x);
@@ -25,18 +26,8 @@ class user{
   void setMaxFase(int x);
   int getMaxFase();
 
+
 };
 
-/*
-  struct User{
-  int vida;        // Attribute (int variable)
-  int fase;  // Attribute (string variable)
-  int win;
-
-  int max_vida;
-  int max_fase;
-
-}; typedef struct User x;
-*/
 
 #endif

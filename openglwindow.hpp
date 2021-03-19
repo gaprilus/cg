@@ -33,7 +33,9 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   float velocidade_y;
   int velocidade;
   float fator_screencolor;
+  bool restarting;
   GameData m_gameData;
+  GameData m_gameData_aux;
 
   Asteroids m_asteroids;
   Bullets m_bullets;
@@ -61,4 +63,3 @@ class OpenGLWindow : public abcg::OpenGLWindow {
 
 };
 #endif
-

@@ -19,7 +19,7 @@ void Asteroids::initializeGL(GLuint program, int quantity) {
 
   // Create asteroids
   m_asteroids.clear();
-  m_asteroids.resize(quantity);
+  m_asteroids.resize(quantity * fase_atual/2);
 
   for (auto &asteroid : m_asteroids) {
     asteroid = createAsteroid();
@@ -48,6 +48,7 @@ void Asteroids::paintGL() {
                     asteroid.m_translation.y + i);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, asteroid.m_polygonSides + 2);
+     
       }
     }
 
@@ -90,7 +91,7 @@ Asteroids::Asteroid Asteroids::createAsteroid(glm::vec2 translation,
   asteroid.m_polygonSides = randomSides(re);
 
   // Choose a random color (actually, a grayscale)
-  std::uniform_real_distribution<float> randomIntensity(0.5f, 1.0f);
+  std::uniform_real_distribution<float> randomIntensity(0.6f, 1.0f);
   asteroid.m_color = glm::vec4(1) * randomIntensity(re);
 
   asteroid.m_color.a = randomIntensity(re);

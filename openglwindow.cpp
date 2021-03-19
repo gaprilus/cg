@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 
+
 void OpenGLWindow::handleEvent(SDL_Event &event) {
   // Keyboard events
   if (event.type == SDL_KEYDOWN) {
@@ -20,7 +21,17 @@ void OpenGLWindow::handleEvent(SDL_Event &event) {
       m_gameData.m_input.set(static_cast<size_t>(Input::Left));
     if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
       m_gameData.m_input.set(static_cast<size_t>(Input::Right));
+
+     if (event.key.keysym.sym == SDLK_p && restarting==false){
+      
+        if(m_gameData.m_state!=State::Pause){
+          m_gameData.m_state=State::Pause;
+        }
+        else  m_gameData.m_state=State::Playing;
+     }
   }
+
+
   if (event.type == SDL_KEYUP) {
     if (event.key.keysym.sym == SDLK_SPACE)
       m_gameData.m_input.reset(static_cast<size_t>(Input::Fire));
@@ -32,6 +43,7 @@ void OpenGLWindow::handleEvent(SDL_Event &event) {
       m_gameData.m_input.reset(static_cast<size_t>(Input::Left));
     if (event.key.keysym.sym == SDLK_RIGHT || event.key.keysym.sym == SDLK_d)
       m_gameData.m_input.reset(static_cast<size_t>(Input::Right));
+    
   }
 
   // Mouse events
@@ -92,6 +104,7 @@ void OpenGLWindow::initializeGL() {
   auto seed{std::chrono::steady_clock::now().time_since_epoch().count()};
   m_randomEngine.seed(seed);
 
+
   // Definicoes iniciais de vida e fase do usuario.
   usuario.setMaxVida(3);
   usuario.setMaxFase(5);
@@ -106,16 +119,17 @@ void OpenGLWindow::initializeGL() {
   velocidade=0;
 
 // Inicio do jogo
-  restart();
+  if(m_gameData.m_state != State::Menu) restart();
 }
 
 void OpenGLWindow::restart() {
+if(m_gameData.m_state != State::Menu && m_gameData.m_state != State::Pause){
   m_gameData.m_state = State::Playing;
-
   m_starLayers.initializeGL(m_starsProgram, 25);
   m_ship.initializeGL(m_objectsProgram);
   m_asteroids.initializeGL(m_objectsProgram, 3);
   m_bullets.initializeGL(m_objectsProgram);
+}
 
 }
 
@@ -123,25 +137,31 @@ void OpenGLWindow::update() {
   float deltaTime{static_cast<float>(getDeltaTime())};
 
   // Wait 5 seconds before restarting
-  if (m_gameData.m_state != State::Playing &&
-      m_restartWaitTimer.elapsed() > 5) {
+  if (m_gameData.m_state != State::Playing && m_gameData.m_state != State::Menu
+      && m_gameData.m_state != State::Pause && m_restartWaitTimer.elapsed() > 5) {
+    restarting =false;
     restart();
     return;
   }
-
+ 
+  if (m_gameData.m_state != State::Pause){
   m_ship.update(m_gameData, deltaTime);
   m_starLayers.update(m_ship, deltaTime);
   m_asteroids.update(m_ship, deltaTime);
   m_bullets.update(m_ship, m_gameData, deltaTime);
-
-  if (m_gameData.m_state == State::Playing) {
+}
+ if (m_gameData.m_state == State::Playing) {
     checkCollisions();
     checkWinCondition();
   }
+
 }
 
+ 
+
 void OpenGLWindow::paintGL() {
-  update();
+  if(m_gameData.m_state != State::Menu )
+            update();
 
   glClear(GL_COLOR_BUFFER_BIT);
   glViewport(0, 0, m_viewportWidth, m_viewportHeight);
@@ -196,7 +216,48 @@ void OpenGLWindow::paintUI(){
     ImGui::End();
   }
   }
-  else{
+  else if(m_gameData.m_state == State::Menu || m_gameData.m_state == State::Pause){
+    abcg::OpenGLWindow::paintUI();
+    auto size{ImVec2(350, 120)};
+    auto position{ImVec2((m_viewportWidth - size.x) / 2.0f,
+                         (m_viewportHeight - size.y) / 2.0f )};
+    
+    ImGui::SetNextWindowSize(size);
+    ImGui::SetNextWindowPos(position);
+    
+    ImGuiWindowFlags flags{
+                           ImGuiWindowFlags_NoFocusOnAppearing |
+                           ImGuiWindowFlags_NoBringToFrontOnFocus
+                           };
+
+    ImGui::Begin(" Menu ",nullptr, flags);
+    ImGui::Columns(3, NULL, true);
+
+    if(m_gameData.m_state == State::Menu){
+         if (ImGui::Button("Novo Jogo", ImVec2(100, 80))){
+        m_gameData.m_state = State::Playing;
+        restarting = false;
+        restart();
+      }
+    } else if (m_gameData.m_state == State::Pause) {
+        if (ImGui::Button("Continuar", ImVec2(100, 80)))
+          m_gameData.m_state = State::Playing; 
+    }
+   
+      ImGui::NextColumn();
+      if (ImGui::Button("Option", ImVec2(100, 80))){
+        ImGui::ShowDemoWindow();
+      }
+      ImGui::NextColumn();
+      if (ImGui::Button("Sair", ImVec2(100, 80))){
+        exit(1);
+       // m_gameData.m_state = State::Playing;
+        //restart();
+      }
+     
+     ImGui::End();
+
+  }else{
   abcg::OpenGLWindow::paintUI();
 
   {
@@ -214,9 +275,11 @@ void OpenGLWindow::paintUI(){
     if (m_gameData.m_state == State::GameOver) {
           
           if(usuario.getVida()==usuario.getMaxVida() && usuario.getWin()==0) {
-          ImGui::Text("Game Over!");
+            ImGui::Text("Game Over!");
+            m_gameData.m_state = State::Menu;
           } else if (usuario.getWin()==1){
             ImGui::Text("*You Win");
+            m_gameData.m_state = State::Menu;
           }
     } else if (m_gameData.m_state == State::Win) {
       
@@ -227,8 +290,7 @@ void OpenGLWindow::paintUI(){
         strcpy(str_fase, "Fase: "); strcat(str_fase, pchar);
         ImGui::Text(str_fase);
          
-        }
-       
+    }
     ImGui::PopFont();
     ImGui::End();
     }
@@ -276,6 +338,7 @@ void OpenGLWindow::checkCollisions() {
       }
       usuario.setWin(0);
       m_restartWaitTimer.restart();
+      restarting= true;
     }
   }
 
@@ -342,5 +405,6 @@ void OpenGLWindow::checkWinCondition() {
     m_ship.fase_atual=usuario.getFase();
 
     m_restartWaitTimer.restart();
+    restarting=true;
   }
 }
